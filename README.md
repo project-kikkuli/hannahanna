@@ -944,7 +944,7 @@ my-project/              # Main repository
 **Multi-VCS Support (v0.3 Complete):**
 - ✅ VCS abstraction layer with trait-based design
 - ✅ Auto-detection (Jujutsu → Git → Mercurial priority)
-- ✅ **Full Mercurial backend** (`hg share` workspaces)
+- ✅ **Mercurial backend** (`hg share` workspaces; [verified workflow and limitations](docs/mercurial-workflow.md))
 - ✅ **Sparse checkout for Mercurial** - v0.3
 - ✅ Full Jujutsu backend (`jj workspace` support)
 - ✅ Clear error messages for unsupported VCS operations
