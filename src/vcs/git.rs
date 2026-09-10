@@ -61,8 +61,9 @@ impl GitBackend {
         from: Option<&str>,
         no_branch: bool,
     ) -> Result<Worktree> {
-        // Get the repository's worktree directory (parent of .git)
-        let repo_path = self.repo.path().parent().ok_or_else(|| {
+        // A linked worktree's git directory is under .git/worktrees, not next
+        // to its source files. New worktrees must be siblings of the workdir.
+        let repo_path = self.repo.workdir().ok_or_else(|| {
             HnError::Git(git2::Error::from_str("Could not determine repository path"))
         })?;
 
@@ -466,7 +467,7 @@ impl GitBackend {
             // Only set parent if we're in an actual worktree, not the main repo
             if !is_main_repo {
                 let parent_name = current_worktree.name.clone();
-                self.set_parent(worktree_path, &parent_name)?;
+                Self::set_parent(worktree_path, &parent_name)?;
                 return Ok(Some(parent_name));
             }
         }
@@ -475,49 +476,27 @@ impl GitBackend {
         Ok(None)
     }
 
-    /// Set the parent worktree using git config
-    fn set_parent(&self, worktree_path: &Path, parent_name: &str) -> Result<()> {
-        use std::process::Command;
-
-        let output = Command::new("git")
-            .arg("-C")
-            .arg(worktree_path)
-            .arg("config")
-            .arg("worktree.parent")
-            .arg(parent_name)
-            .output()?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(HnError::Git(git2::Error::from_str(&format!(
-                "Failed to set parent config: {}",
-                stderr
-            ))));
-        }
-
+    /// Store each parent link in that worktree's own Git administrative directory.
+    /// Git's ordinary local config is shared by all linked worktrees, so a
+    /// repository-wide worktree.parent value cannot describe this relationship.
+    pub fn set_parent(worktree_path: &Path, parent_name: &str) -> Result<()> {
+        use std::io::Write;
+        let repo = Repository::open(worktree_path)?;
+        let mut file = tempfile::NamedTempFile::new_in(repo.path())?;
+        writeln!(file, "{}", parent_name)?;
+        file.persist(repo.path().join("hannahanna-parent"))
+            .map_err(|error| HnError::Io(error.error))?;
         Ok(())
     }
 
-    /// Get the parent worktree from git config
     fn get_parent(&self, worktree_path: &Path) -> Result<String> {
-        use std::process::Command;
-
-        let output = Command::new("git")
-            .arg("-C")
-            .arg(worktree_path)
-            .arg("config")
-            .arg("--get")
-            .arg("worktree.parent")
-            .output()?;
-
-        if output.status.success() {
-            let parent = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !parent.is_empty() {
-                return Ok(parent);
-            }
+        let repo = Repository::open(worktree_path)?;
+        let parent = std::fs::read_to_string(repo.path().join("hannahanna-parent"))?;
+        let parent = parent.trim();
+        if parent.is_empty() {
+            return Err(HnError::Git(git2::Error::from_str("No parent metadata")));
         }
-
-        Err(HnError::Git(git2::Error::from_str("No parent config")))
+        Ok(parent.to_string())
     }
 
     /// Parse git version string (e.g., "git version 2.34.1" -> (2, 34, 1))

@@ -188,6 +188,13 @@ hn return --merge             # Merge into feature-payment
 # ... continue feature work
 ```
 
+Git worktrees created from another worktree are siblings of that worktree's
+source directory. Parent links live in each worktree's own Git administrative
+directory, so creating another child does not change everyone else's parent.
+Legacy repository-wide `worktree.parent` config values are left untouched but
+are not used: they cannot identify which worktree owns the relationship.
+Commands also discover the repository when invoked from a subdirectory.
+
 **Options:**
 - `--merge` - Merge current branch into parent before returning
 - `--delete` - Delete current worktree after merging (requires `--merge`)
