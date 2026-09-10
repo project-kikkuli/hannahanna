@@ -8,6 +8,7 @@ pub mod init_shell;
 pub mod integrate;
 pub mod list;
 pub mod monitor;
+mod output;
 pub mod ports;
 pub mod prune;
 pub mod remove;

@@ -125,7 +125,10 @@ fn test_get_current_workspace_via_trait() {
 
     // Main worktree name is derived from directory
     assert!(!current.name.is_empty());
-    assert_eq!(current.path, test_repo.repo_path);
+    assert_eq!(
+        current.path.canonicalize().unwrap(),
+        test_repo.repo_path.canonicalize().unwrap()
+    );
 
     // Restore directory
     std::env::set_current_dir(original_dir).ok();
@@ -600,18 +603,6 @@ fn setup_hg_repo(path: &Path) -> bool {
         return false;
     }
 
-    // Configure hg
-    Command::new("hg")
-        .args([
-            "config",
-            "--local",
-            "ui.username",
-            "Test User <test@example.com>",
-        ])
-        .current_dir(path)
-        .output()
-        .ok();
-
     // Create initial file and commit
     fs::write(path.join("README"), "Test repo\n").ok();
 
@@ -625,7 +616,13 @@ fn setup_hg_repo(path: &Path) -> bool {
     }
 
     let commit = Command::new("hg")
-        .args(["commit", "-m", "Initial commit"])
+        .args([
+            "commit",
+            "-u",
+            "Test User <test@example.invalid>",
+            "-m",
+            "Initial commit",
+        ])
         .current_dir(path)
         .output();
 

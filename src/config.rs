@@ -514,8 +514,7 @@ impl Config {
         let mut current = start_path;
 
         loop {
-            let git_path = current.join(".git");
-            if git_path.exists() {
+            if crate::vcs::traits::detect_vcs_type(current).is_some() {
                 return Ok(current.to_path_buf());
             }
 
@@ -565,6 +564,19 @@ mod tests {
     use super::*;
     use std::io::Write;
     use tempfile::TempDir;
+
+    #[test]
+    fn finds_non_git_repository_before_enclosing_git_repository() {
+        for marker in [".hg", ".jj"] {
+            let temp = tempfile::tempdir().unwrap();
+            std::fs::create_dir(temp.path().join(".git")).unwrap();
+            let repo = temp.path().join("nested");
+            std::fs::create_dir_all(repo.join(marker)).unwrap();
+            let subdir = repo.join("src/deep");
+            std::fs::create_dir_all(&subdir).unwrap();
+            assert_eq!(Config::find_repo_root(&subdir).unwrap(), repo);
+        }
+    }
 
     #[test]
     fn test_default_config() {

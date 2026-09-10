@@ -61,6 +61,9 @@ enum Commands {
         /// Apply a configuration profile (dev/staging/prod)
         #[arg(long)]
         profile: Option<String>,
+        /// Output format for the created worktree
+        #[arg(long, value_parser = ["text", "json"], default_value = "text")]
+        format: String,
     },
     /// List all worktrees
     List {
@@ -70,6 +73,9 @@ enum Commands {
         /// Filter by tag
         #[arg(long)]
         tag: Option<String>,
+        /// Output format (JSON contains current VCS metadata)
+        #[arg(long, value_parser = ["text", "json"], default_value = "text")]
+        format: String,
     },
     /// Remove a worktree
     Remove {
@@ -78,6 +84,9 @@ enum Commands {
         /// Force removal even if there are uncommitted changes
         #[arg(short, long)]
         force: bool,
+        /// Require an exact worktree name (for scripts and companion tools)
+        #[arg(long)]
+        exact: bool,
     },
     /// Switch to a worktree (outputs path for shell wrapper)
     Switch {
@@ -100,6 +109,9 @@ enum Commands {
     Info {
         /// Name of the worktree (defaults to current)
         name: Option<String>,
+        /// Output format for worktree metadata
+        #[arg(long, value_parser = ["text", "json"], default_value = "text")]
+        format: String,
     },
     /// Execute a command in each worktree
     Each {
@@ -635,6 +647,7 @@ fn main() {
             template,
             param,
             profile,
+            format,
         } => cli::add::run(
             name,
             branch,
@@ -646,16 +659,21 @@ fn main() {
             profile,
             cli.no_hooks,
             vcs_type,
+            format == "json",
         ),
-        Commands::List { tree, tag } => cli::list::run(tree, tag, vcs_type),
-        Commands::Remove { name, force } => cli::remove::run(name, force, cli.no_hooks, vcs_type),
+        Commands::List { tree, tag, format } => {
+            cli::list::run(tree, tag, vcs_type, format == "json")
+        }
+        Commands::Remove { name, force, exact } => {
+            cli::remove::run(name, force, cli.no_hooks, vcs_type, exact)
+        }
         Commands::Switch { name } => cli::switch::run(name, vcs_type),
         Commands::Return {
             merge,
             delete,
             no_ff,
         } => cli::return_cmd::run(merge, delete, no_ff, cli.no_hooks, vcs_type),
-        Commands::Info { name } => cli::info::run(name, vcs_type),
+        Commands::Info { name, format } => cli::info::run(name, vcs_type, format == "json"),
         Commands::Each {
             command,
             parallel,

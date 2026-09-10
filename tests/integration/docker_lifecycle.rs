@@ -243,8 +243,8 @@ fn test_parse_timeout_edge_cases() {
     // Zero is edge case - may or may not be valid
     let result = manager.parse_timeout("0");
     // If it succeeds, verify it's 0 seconds
-    if result.is_ok() {
-        assert_eq!(result.unwrap(), 0);
+    if let Ok(count) = result {
+        assert_eq!(count, 0);
     }
 
     // Very large timeout

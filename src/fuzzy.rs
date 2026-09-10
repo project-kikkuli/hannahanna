@@ -67,7 +67,7 @@ pub fn find_best_match(query: &str, candidates: &[String]) -> Result<String> {
     }
 
     // Sort by score (highest first)
-    matches.sort_by(|a, b| b.1.cmp(&a.1));
+    matches.sort_by_key(|item| std::cmp::Reverse(item.1));
 
     // Check if there are multiple matches with the same top score
     if matches.len() > 1 && matches[0].1 == matches[1].1 {

@@ -184,17 +184,11 @@ pub fn run(
             );
 
             for child in &children {
-                // Update parent using git config
-                let reparent_output = Command::new("git")
-                    .arg("-C")
-                    .arg(&child.path)
-                    .arg("config")
-                    .arg("worktree.parent")
-                    .arg(&target_worktree.name)
-                    .output();
+                let reparent_result =
+                    crate::vcs::git::GitBackend::set_parent(&child.path, &target_worktree.name);
 
-                match reparent_output {
-                    Ok(output) if output.status.success() => {
+                match reparent_result {
+                    Ok(()) => {
                         eprintln!("  ✓ Reparented '{}'", child.name);
                     }
                     _ => {

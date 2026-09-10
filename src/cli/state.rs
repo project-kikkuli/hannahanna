@@ -178,7 +178,7 @@ pub fn size(name: Option<String>) -> Result<()> {
             }
         }
 
-        sizes.sort_by(|a, b| b.1.cmp(&a.1)); // Sort by size descending
+        sizes.sort_by_key(|item| std::cmp::Reverse(item.1)); // Sort by size descending
 
         for (name, size) in &sizes {
             println!("  {}: {}", name.bright_cyan(), format_size(*size));

@@ -94,7 +94,13 @@ pub fn run(
         env::set_current_dir(&parent.path)?;
 
         // Remove the worktree
-        crate::cli::remove::run(current_worktree.name.clone(), false, no_hooks, vcs_type)?;
+        crate::cli::remove::run(
+            current_worktree.name.clone(),
+            false,
+            no_hooks,
+            vcs_type,
+            true,
+        )?;
 
         eprintln!("✓ Worktree deleted");
     }

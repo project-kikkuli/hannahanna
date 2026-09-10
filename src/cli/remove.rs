@@ -10,7 +10,13 @@ use crate::monitoring::{self, ActivityEvent};
 use crate::state::StateManager;
 use crate::vcs::{init_backend_from_current_dir, RegistryCache, VcsType};
 
-pub fn run(name: String, force: bool, no_hooks: bool, vcs_type: Option<VcsType>) -> Result<()> {
+pub fn run(
+    name: String,
+    force: bool,
+    no_hooks: bool,
+    vcs_type: Option<VcsType>,
+    exact: bool,
+) -> Result<()> {
     // Validate worktree name
     validation::validate_worktree_name(&name)?;
 
@@ -26,7 +32,15 @@ pub fn run(name: String, force: bool, no_hooks: bool, vcs_type: Option<VcsType>)
     let worktree_names: Vec<String> = worktrees.iter().map(|wt| wt.name.clone()).collect();
 
     // Find the best match using fuzzy matching
-    let matched_name = fuzzy::find_best_match(&name, &worktree_names)?;
+    let matched_name = if exact {
+        worktree_names
+            .iter()
+            .find(|candidate| *candidate == &name)
+            .cloned()
+            .ok_or_else(|| HnError::WorktreeNotFound(name.clone()))?
+    } else {
+        fuzzy::find_best_match(&name, &worktree_names)?
+    };
 
     if matched_name != name {
         eprintln!("Matched '{}' to '{}'", name, matched_name);

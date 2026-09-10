@@ -3,7 +3,7 @@ use crate::tags;
 use crate::vcs::{init_backend_from_current_dir, short_commit, RegistryCache, VcsType, Worktree};
 use std::collections::HashMap;
 
-pub fn run(tree: bool, tag: Option<String>, vcs_type: Option<VcsType>) -> Result<()> {
+pub fn run(tree: bool, tag: Option<String>, vcs_type: Option<VcsType>, json: bool) -> Result<()> {
     let backend = if let Some(vcs) = vcs_type {
         crate::vcs::init_backend_with_detection(&std::env::current_dir()?, Some(vcs))?
     } else {
@@ -14,7 +14,11 @@ pub fn run(tree: bool, tag: Option<String>, vcs_type: Option<VcsType>) -> Result
     let repo_root = backend.repo_root()?;
     let state_dir = repo_root.join(".hn-state");
 
-    let mut worktrees = if let Ok(cache) = RegistryCache::new(&state_dir, None) {
+    let mut worktrees = if json {
+        // Consumers use branch/commit metadata to perform subsequent operations.
+        // The human-facing display cache is not an authoritative snapshot.
+        backend.list_workspaces()?
+    } else if let Ok(cache) = RegistryCache::new(&state_dir, None) {
         if let Ok(Some(cached_worktrees)) = cache.get() {
             // Cache hit!
             cached_worktrees
@@ -34,13 +38,19 @@ pub fn run(tree: bool, tag: Option<String>, vcs_type: Option<VcsType>) -> Result
         let tagged_worktrees = tags::get_worktrees_by_tag(&state_dir, filter_tag)?;
         worktrees.retain(|wt| tagged_worktrees.contains(&wt.name));
 
-        if worktrees.is_empty() {
+        if worktrees.is_empty() && !json {
             eprintln!("No worktrees found with tag '{}'", filter_tag);
             return Ok(());
         }
     }
 
-    if tree {
+    if json {
+        let items: Vec<_> = worktrees
+            .iter()
+            .map(|worktree| super::output::worktree_json(worktree, backend.vcs_type()))
+            .collect();
+        println!("{}", serde_json::to_string(&items)?);
+    } else if tree {
         // Tree view with parent/child relationships
         display_tree_view(&worktrees);
     } else {

@@ -83,6 +83,19 @@ hn remove feature-auth
 
 ## Commands
 
+### Machine-readable worktree metadata
+
+Companion tools can use `hn add NAME --format=json`,
+`hn info [NAME] --format=json`, and `hn list --format=json`.
+Add/info emit one object; list emits an array (including `[]` for an empty tag
+filter). Each object contains `name`, `path`, `branch`, `commit`, `parent`
+(string or null), and `vcs_type` (`git`, `mercurial`, or `jujutsu`). JSON list
+queries the VCS directly so its commit and branch metadata are current.
+
+Check the exit status before parsing stdout. Progress and errors go to stderr;
+JSON add requires an explicit name and does not prompt for one. The default
+human-readable output and existing creation hooks remain available.
+
 ### `hn add <name> [options]`
 
 Create a new worktree.
@@ -174,6 +187,13 @@ hn add fix-validation-bug    # Child of feature-payment
 hn return --merge             # Merge into feature-payment
 # ... continue feature work
 ```
+
+Git worktrees created from another worktree are siblings of that worktree's
+source directory. Parent links live in each worktree's own Git administrative
+directory, so creating another child does not change everyone else's parent.
+Legacy repository-wide `worktree.parent` config values are left untouched but
+are not used: they cannot identify which worktree owns the relationship.
+Commands also discover the repository when invoked from a subdirectory.
 
 **Options:**
 - `--merge` - Merge current branch into parent before returning
@@ -924,7 +944,7 @@ my-project/              # Main repository
 **Multi-VCS Support (v0.3 Complete):**
 - ✅ VCS abstraction layer with trait-based design
 - ✅ Auto-detection (Jujutsu → Git → Mercurial priority)
-- ✅ **Full Mercurial backend** (`hg share` workspaces)
+- ✅ **Mercurial backend** (`hg share` workspaces; [verified workflow and limitations](docs/mercurial-workflow.md))
 - ✅ **Sparse checkout for Mercurial** - v0.3
 - ✅ Full Jujutsu backend (`jj workspace` support)
 - ✅ Clear error messages for unsupported VCS operations
@@ -1236,3 +1256,7 @@ MIT License - see [LICENSE](LICENSE) for details
 ## Name Origin
 
 **Hannahanna** (Ḫannaḫanna) is the Hittite mother goddess, associated with creation and nurturing - fitting for a tool that creates and manages development environments.
+
+For automated removal, use `hn remove NAME --exact`. A missing exact name fails
+without selecting a similarly named worktree; interactive fuzzy matching remains
+the default when this flag is omitted.

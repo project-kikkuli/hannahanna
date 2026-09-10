@@ -35,7 +35,13 @@ pub fn run(
     profile: Option<String>,
     no_hooks: bool,
     vcs_type: Option<VcsType>,
+    json: bool,
 ) -> Result<()> {
+    if json && name.is_none() {
+        return Err(crate::errors::HnError::ConfigError(
+            "JSON output requires an explicit worktree name".to_string(),
+        ));
+    }
     // Interactive mode if name is not provided
     let params = if let Some(name) = name {
         WorktreeParams {
@@ -285,6 +291,13 @@ pub fn run(
         }
     }
 
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string(&super::output::worktree_json(&worktree, backend.vcs_type()))?
+        );
+        return Ok(());
+    }
     eprintln!("\nDone! Switch to the worktree with:");
     eprintln!("  hn switch {}", name);
 

@@ -27,7 +27,10 @@ pub fn init_backend_with_detection(
     // Use explicit VCS type if provided, otherwise auto-detect
     let detected_vcs = match vcs_type {
         Some(vcs) => vcs,
-        None => detect_vcs_type(path).ok_or(HnError::NotInRepository)?,
+        None => path
+            .ancestors()
+            .find_map(detect_vcs_type)
+            .ok_or(HnError::NotInRepository)?,
     };
 
     // Create backend at the specified path without changing cwd
