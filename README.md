@@ -83,6 +83,19 @@ hn remove feature-auth
 
 ## Commands
 
+### Machine-readable worktree metadata
+
+Companion tools can use `hn add NAME --format=json`,
+`hn info [NAME] --format=json`, and `hn list --format=json`.
+Add/info emit one object; list emits an array (including `[]` for an empty tag
+filter). Each object contains `name`, `path`, `branch`, `commit`, `parent`
+(string or null), and `vcs_type` (`git`, `mercurial`, or `jujutsu`). JSON list
+queries the VCS directly so its commit and branch metadata are current.
+
+Check the exit status before parsing stdout. Progress and errors go to stderr;
+JSON add requires an explicit name and does not prompt for one. The default
+human-readable output and existing creation hooks remain available.
+
 ### `hn add <name> [options]`
 
 Create a new worktree.

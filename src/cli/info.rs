@@ -13,7 +13,7 @@ use std::time::SystemTime;
 /// Show detailed information about a worktree
 ///
 /// If no name is provided, shows info for the current worktree
-pub fn run(name: Option<String>, vcs_type: Option<VcsType>) -> Result<()> {
+pub fn run(name: Option<String>, vcs_type: Option<VcsType>, json: bool) -> Result<()> {
     let backend = if let Some(vcs) = vcs_type {
         crate::vcs::init_backend_with_detection(&env::current_dir()?, Some(vcs))?
     } else {
@@ -36,6 +36,13 @@ pub fn run(name: Option<String>, vcs_type: Option<VcsType>) -> Result<()> {
         backend.get_current_workspace()?
     };
 
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string(&super::output::worktree_json(&worktree, backend.vcs_type()))?
+        );
+        return Ok(());
+    }
     // Get all worktrees for parent/children relationships
     let all_worktrees = backend.list_workspaces()?;
 
