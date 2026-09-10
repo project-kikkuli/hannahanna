@@ -398,24 +398,24 @@ hooks:
 
 #[test]
 fn test_hook_conditional_case_sensitivity() {
-    let repo = TestRepo::new();
-
-    repo.create_config(
-        r#"
+    // Keep the case-only branch variants in separate repositories so this
+    // tests hook matching even on a case-insensitive filesystem.
+    for (branch, should_match) in [("feature-test", false), ("Feature-test", true)] {
+        let repo = TestRepo::new();
+        repo.create_config(
+            r#"
 hooks:
   post_create_conditions:
     - condition: "branch.startsWith('Feature-')"
       command: "echo 'matched' > case.txt"
 "#,
-    );
-
-    // Should not match - case sensitive
-    repo.hn(&["add", "feature-test"]).assert_success();
-    assert!(!repo.worktree_path("feature-test").join("case.txt").exists());
-
-    // Should match
-    repo.hn(&["add", "Feature-test"]).assert_success();
-    assert!(repo.worktree_path("Feature-test").join("case.txt").exists());
+        );
+        repo.hn(&["add", branch]).assert_success();
+        assert_eq!(
+            repo.worktree_path(branch).join("case.txt").exists(),
+            should_match
+        );
+    }
 }
 
 #[test]
