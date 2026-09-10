@@ -52,3 +52,15 @@ fn machine_list_is_current_and_empty_tag_filter_is_an_array() {
         serde_json::json!([])
     );
 }
+
+#[test]
+fn exact_removal_does_not_delete_a_similarly_named_worktree() {
+    let repo = TestRepo::new();
+    repo.hn(&["add", "task-other"]).assert_success();
+    let result = repo.hn(&["remove", "task", "--exact"]);
+    assert!(!result.success);
+    assert!(repo.worktree_path("task-other").exists());
+    repo.hn(&["remove", "task-other", "--exact"])
+        .assert_success();
+    assert!(!repo.worktree_path("task-other").exists());
+}

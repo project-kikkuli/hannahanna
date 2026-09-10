@@ -1256,3 +1256,7 @@ MIT License - see [LICENSE](LICENSE) for details
 ## Name Origin
 
 **Hannahanna** (Ḫannaḫanna) is the Hittite mother goddess, associated with creation and nurturing - fitting for a tool that creates and manages development environments.
+
+For automated removal, use `hn remove NAME --exact`. A missing exact name fails
+without selecting a similarly named worktree; interactive fuzzy matching remains
+the default when this flag is omitted.

@@ -84,6 +84,9 @@ enum Commands {
         /// Force removal even if there are uncommitted changes
         #[arg(short, long)]
         force: bool,
+        /// Require an exact worktree name (for scripts and companion tools)
+        #[arg(long)]
+        exact: bool,
     },
     /// Switch to a worktree (outputs path for shell wrapper)
     Switch {
@@ -661,7 +664,9 @@ fn main() {
         Commands::List { tree, tag, format } => {
             cli::list::run(tree, tag, vcs_type, format == "json")
         }
-        Commands::Remove { name, force } => cli::remove::run(name, force, cli.no_hooks, vcs_type),
+        Commands::Remove { name, force, exact } => {
+            cli::remove::run(name, force, cli.no_hooks, vcs_type, exact)
+        }
         Commands::Switch { name } => cli::switch::run(name, vcs_type),
         Commands::Return {
             merge,
