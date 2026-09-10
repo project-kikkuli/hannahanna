@@ -405,10 +405,8 @@ impl GitBackend {
                         status.modified += 1;
                     }
                 }
-                'D' => {
-                    if index_status == ' ' {
-                        status.deleted += 1;
-                    }
+                'D' if index_status == ' ' => {
+                    status.deleted += 1;
                 }
                 _ => {}
             }
